@@ -2,8 +2,8 @@
 
 $fn = 300;
 
-// Diameter of all the metal axles used in the design.
-AXLES_DIAMETER = 9.6; // mm
+// Diameter of the metal axles used for the main altitude and azimuth gears (make about 0.4 mm greater than desired due to PLA shrinkage).
+AXLES_DIAMETER = 10.3; // mm
 
 // Number of teeth on the main (larger) azimuth gear.
 MAIN_AZIMUTH_GEAR_TEETH = 32; // teeth
@@ -46,12 +46,30 @@ module Hex_Coupler() {
     color([1, 0, 0])
         difference() {
             union() {
-                cylinder(d = 13.855, h = 5, $fn = 6);
+                cylinder(d = 13.868, h = 5, $fn = 6);
                 translate([0, 0, 5])
                     cylinder(d = 11.41, h = 18 - 5);
             }
             cylinder(d = 4, h = 40, center = true);
         }
+}
+
+// A hole appropriately shaped and sized to hold a partially-recessed M3 nut and bolt, with a washer under the head of the nut.
+module Hole_For_M3_Nut_And_Bolt() {
+    NUT_HEIGHT = 2;
+    BOLT_DIAMETER = 4;
+    NUT_DIAMETER = 6.282 + 0.3;
+    HEAD_WITH_WASHER_THICKNESS = 2;
+    WASHER_DIAMETER = 10;
+    translate([-NUT_HEIGHT - (ALTITUDE_GEARS_THICKNESS - NUT_HEIGHT - HEAD_WITH_WASHER_THICKNESS) / 2, 0]) {
+        rotate([0, 90]) {
+            translate([0, 0, -0.1])
+                cylinder(d = NUT_DIAMETER, h = NUT_HEIGHT + 0.1, $fn = 6);
+            cylinder(d = BOLT_DIAMETER, h = ALTITUDE_GEARS_THICKNESS);
+            translate([0, 0, ALTITUDE_GEARS_THICKNESS - HEAD_WITH_WASHER_THICKNESS])
+                cylinder(d = WASHER_DIAMETER, h = HEAD_WITH_WASHER_THICKNESS + 0.1);
+        }
+    }
 }
 
 // Main azimuth gear.
@@ -69,12 +87,12 @@ module Driving_Azimuth_Gear() {
                     gear(thickness = AZIMUTH_GEARS_THICKNESS, number_of_teeth = DRIVING_AZIMUTH_GEAR_TEETH, mm_per_tooth = AZIMUTH_GEARS_MM_PER_TOOTH, hole_diameter = 0);
                     translate([0, 0, -12])
                         cylinder(d = 15, h = 20);
-                    cylinder(d = 3.3, h = 20);
+                    cylinder(d = 4.5, h = 20);
                 }
                 translate([0, 0, AZIMUTH_GEARS_THICKNESS/2 + 5]) {
                     difference() {
-                        cylinder(d = 15, h = 5);
-                        cylinder(d = 13.855, h = 20, $fn = 6, center = true);
+                        cylinder(d = 18.5, h = 7.2);
+                        cylinder(d = 14.6, h = 20, $fn = 6, center = true);
                     }
                 }
             }
@@ -122,28 +140,51 @@ module Main_Altitude_Gear_Assembly() {
 
     color([1, 1, 0]) {
         translate([-ALTITUDE_GEARS_THICKNESS/2, 0, ALTITUDE_GEAR_AXLE_HEIGHT]) {
-            // Make the main altitude gear with a hole cut out of the top for the PVC pipe.
+            // Make the main altitude gear with a hole cut out of the top for the PVC pipe and holes for nuts and bolts.
             difference() {
+                // Gear body.
                 rotate([0, 90]) {
-                    difference() {
-                        gear(thickness = ALTITUDE_GEARS_THICKNESS, number_of_teeth = MAIN_ALTITUDE_GEAR_TEETH, mm_per_tooth = ALTITUDE_GEARS_MM_PER_TOOTH, hole_diameter = AXLES_DIAMETER);
-                    }
+                    gear(thickness = ALTITUDE_GEARS_THICKNESS, number_of_teeth = MAIN_ALTITUDE_GEAR_TEETH, mm_per_tooth = ALTITUDE_GEARS_MM_PER_TOOTH, hole_diameter = AXLES_DIAMETER);
                 }
+                // Hole for the PVC pipe.
                 translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 20])
                     cylinder(d = 35, h = 30);
+                // Holes for nuts and bolts to hold the gear together.
+                for (angle = [45:360 / 4:360 + 45]) {
+                    rotate([angle, 0, 0])
+                        translate([ALTITUDE_GEARS_THICKNESS/2, 0, 70])
+                            Hole_For_M3_Nut_And_Bolt();
+                }
             }
             // Add a collar to go around the PVC pipe, plus a half-sphere underneath it to brace it against the gear.
-            translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 20]) {
+            translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 25]) {
                 // Collar for PVC pipe.
                 difference() {
-                    cylinder(d = 35, h = 40);
+                    union() {
+                        // Outside of collar.
+                        cylinder(d = 35, h = 40);
+                        // Add tabs on the collar for nuts and bolts to go through.
+                        difference() {
+                            union() {
+                                translate([0, 23, 32.5])
+                                    cube([ALTITUDE_GEARS_THICKNESS, 15, 15], center = true);
+                                translate([0, -23, 32.5])
+                                    cube([ALTITUDE_GEARS_THICKNESS, 15, 15], center = true);
+                            }
+                            translate([0, 23.5, 32.5])
+                                Hole_For_M3_Nut_And_Bolt();
+                            translate([0, -23.5, 32.5])
+                                Hole_For_M3_Nut_And_Bolt();
+                        }
+                    }
+                    // Hole in collar.
                     translate([0, 0, 4])
                         cylinder(d = 28, h = 45);
                 }
                 // Half-sphere to brace collar against gear.
                 difference() {
                     sphere(d = 35);
-                    translate([0, 0, 20])
+                    translate([0, 0, 21])
                         cube([40, 40, 40], center = true);
                 }
             }
@@ -161,12 +202,12 @@ module Driving_Altitude_Gear() {
                             gear(thickness = ALTITUDE_GEARS_THICKNESS, number_of_teeth = DRIVING_ALTITUDE_GEAR_TEETH, mm_per_tooth = ALTITUDE_GEARS_MM_PER_TOOTH, hole_diameter = 0);
                             translate([0, 0, -12])
                                 cylinder(d = 15, h = 20);
-                            cylinder(d = 3.3, h = 20);
+                            cylinder(d = 4.5, h = 20);
                         }
                         translate([0, 0, ALTITUDE_GEARS_THICKNESS/2 + 5]) {
                             difference() {
-                                cylinder(d = 15, h = 5);
-                                cylinder(d = 13.855, h = 20, $fn = 6, center = true);
+                                cylinder(d = 18.5, h = 7.2);
+                                cylinder(d = 14.6, h = 20, $fn = 6, center = true);
                             }
                         }
                     }
@@ -258,6 +299,25 @@ module Baseplate_Assembly() {
     }
 }
 
+// Main altitude gear assembly sliced into two pieces (with holes for bolts to attach them together) that can be printed flat.
+module Altitude_Gear_Assembly_Printable_Piece_1() {
+    difference() {
+        translate([0, 0, -ALTITUDE_GEAR_AXLE_HEIGHT])
+            Main_Altitude_Gear_Assembly();
+        translate([25, 0])
+            cube([50, 250, 300], center = true);
+    }
+}
+
+module Altitude_Gear_Assembly_Printable_Piece_2() {
+    difference() {
+        translate([0, 0, -ALTITUDE_GEAR_AXLE_HEIGHT])
+            Main_Altitude_Gear_Assembly();
+        translate([-25, 0])
+            cube([50, 250, 300], center = true);
+    }
+}
+
 Main_Azimuth_Gear_Assembly();
 Driving_Azimuth_Gear_Assembly();
 Driving_Azimuth_Motor_Assembly();
@@ -265,5 +325,8 @@ Driving_Azimuth_Motor_Assembly();
 Main_Altitude_Gear_Assembly();
 Driving_Altitude_Motor_Assembly();
 Driving_Altitude_Gear_Assembly();
+
+//Altitude_Gear_Assembly_Printable_Piece_1();
+//Altitude_Gear_Assembly_Printable_Piece_2();
 
 Baseplate_Assembly();
