@@ -147,36 +147,21 @@ module Main_Altitude_Gear_Assembly() {
                     gear(thickness = ALTITUDE_GEARS_THICKNESS, number_of_teeth = MAIN_ALTITUDE_GEAR_TEETH, mm_per_tooth = ALTITUDE_GEARS_MM_PER_TOOTH, hole_diameter = AXLES_DIAMETER);
                 }
                 // Hole for the PVC pipe.
-                translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 20])
-                    cylinder(d = 35, h = 30);
+                translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 40])
+                    cylinder(d = 35, h = 50);
                 // Holes for nuts and bolts to hold the gear together.
-                for (angle = [45:360 / 4:360 + 45]) {
+                for (angle = [90:360 / 6:360 + 90]) {
                     rotate([angle, 0, 0])
                         translate([ALTITUDE_GEARS_THICKNESS/2, 0, 70])
                             Hole_For_M3_Nut_And_Bolt();
                 }
             }
             // Add a collar to go around the PVC pipe, plus a half-sphere underneath it to brace it against the gear.
-            translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 25]) {
+            translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 45]) {
                 // Collar for PVC pipe.
                 difference() {
-                    union() {
-                        // Outside of collar.
-                        cylinder(d = 35, h = 40);
-                        // Add tabs on the collar for nuts and bolts to go through.
-                        difference() {
-                            union() {
-                                translate([0, 23, 32.5])
-                                    cube([ALTITUDE_GEARS_THICKNESS, 15, 15], center = true);
-                                translate([0, -23, 32.5])
-                                    cube([ALTITUDE_GEARS_THICKNESS, 15, 15], center = true);
-                            }
-                            translate([0, 23.5, 32.5])
-                                Hole_For_M3_Nut_And_Bolt();
-                            translate([0, -23.5, 32.5])
-                                Hole_For_M3_Nut_And_Bolt();
-                        }
-                    }
+                    // Outside of collar.
+                    cylinder(d = 35, h = 40);
                     // Hole in collar.
                     translate([0, 0, 4])
                         cylinder(d = 28, h = 45);
