@@ -47,10 +47,10 @@ impl Thunderborg {
         self.i2c.write(&buf).unwrap();
     }
     
-    pub fn set_led_1(&mut self, r: f32, g: f32, b: f32) {
-        let r_int: u8 = (r * (Thunderborg::PWM_MAX as f32)) as u8;
-        let g_int: u8 = (g * (Thunderborg::PWM_MAX as f32)) as u8;
-        let b_int: u8 = (b * (Thunderborg::PWM_MAX as f32)) as u8;
+    pub fn set_led_1(&mut self, r: f64, g: f64, b: f64) {
+        let r_int: u8 = (r * (Thunderborg::PWM_MAX as f64)) as u8;
+        let g_int: u8 = (g * (Thunderborg::PWM_MAX as f64)) as u8;
+        let b_int: u8 = (b * (Thunderborg::PWM_MAX as f64)) as u8;
 
         let buf: [u8; 4] = [Thunderborg::COMMAND_SET_LED1, r_int, g_int, b_int];
 
@@ -78,16 +78,16 @@ impl Thunderborg {
         }
     }
 
-    pub fn set_motor_1(&mut self, power: f32) {
+    pub fn set_motor_1(&mut self, power: f64) {
         let command: u8;
         let mut pwm: u8;
         if power < 0.0 {
             command = Thunderborg::COMMAND_SET_A_REV;
-            pwm = -(power * (Thunderborg::PWM_MAX as f32)) as u8;
+            pwm = -(power * (Thunderborg::PWM_MAX as f64)) as u8;
         }
         else {
             command = Thunderborg::COMMAND_SET_A_FWD;
-            pwm = (power * (Thunderborg::PWM_MAX as f32)) as u8;
+            pwm = (power * (Thunderborg::PWM_MAX as f64)) as u8;
         }
         if pwm > Thunderborg::PWM_MAX {
             pwm = Thunderborg::PWM_MAX;
@@ -97,16 +97,16 @@ impl Thunderborg {
         self.i2c.write(&buf).unwrap();
     }
 
-    pub fn set_motor_2(&mut self, power: f32) {
+    pub fn set_motor_2(&mut self, power: f64) {
         let command: u8;
         let mut pwm: u8;
         if power < 0.0 {
             command = Thunderborg::COMMAND_SET_B_REV;
-            pwm = -(power * (Thunderborg::PWM_MAX as f32)) as u8;
+            pwm = -(power * (Thunderborg::PWM_MAX as f64)) as u8;
         }
         else {
             command = Thunderborg::COMMAND_SET_B_FWD;
-            pwm = (power * (Thunderborg::PWM_MAX as f32)) as u8;
+            pwm = (power * (Thunderborg::PWM_MAX as f64)) as u8;
         }
         if pwm > Thunderborg::PWM_MAX {
             pwm = Thunderborg::PWM_MAX;
