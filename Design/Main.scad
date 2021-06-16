@@ -1,9 +1,12 @@
 // units: mm
 
-$fn = 300;
+$fn = 200;
 
-// Diameter of the metal axles used for the main altitude and azimuth gears (make about 0.4 mm greater than desired due to PLA shrinkage).
-AXLES_DIAMETER = 10.3; // mm
+// Diameter of the metal axles used for the main altitude and azimuth gears.
+AXLES_DIAMETER = 10.5; // mm
+
+// Diameter of the holes used to seat the radial bearings for the gears.
+RADIAL_BEARINGS_DIAMETER = 29; // mm
 
 // Number of teeth on the main (larger) azimuth gear.
 MAIN_AZIMUTH_GEAR_TEETH = 32; // teeth
@@ -36,7 +39,7 @@ ALTITUDE_GEARS_MM_PER_TOOTH = 18.45; // mm/tooth
 DRIVING_ALTITUDE_GEAR_TEETH = 7; // teeth
 
 // Height (measured from the bottom face of the azimuth gear) to the axle of the altitude gear.
-ALTITUDE_GEAR_AXLE_HEIGHT = 100 + 15 + 50;
+ALTITUDE_GEAR_AXLE_HEIGHT = 100 + 15 + 50 + 20;
 
 use <pd-gears.scad>
 use <DC Motor.scad>
@@ -75,7 +78,14 @@ module Hole_For_M3_Nut_And_Bolt() {
 // Main azimuth gear.
 module Main_Azimuth_Gear() {
     color([0.67, 0.84, 0.9])
-        gear(thickness = AZIMUTH_GEARS_THICKNESS, number_of_teeth = MAIN_AZIMUTH_GEAR_TEETH, mm_per_tooth = AZIMUTH_GEARS_MM_PER_TOOTH, hole_diameter = AXLES_DIAMETER);
+        difference() {
+            gear(thickness = AZIMUTH_GEARS_THICKNESS, number_of_teeth = MAIN_AZIMUTH_GEAR_TEETH, mm_per_tooth = AZIMUTH_GEARS_MM_PER_TOOTH, hole_diameter = 25);
+            for (angle = [0 : 360 / 3 : 360]) {
+                rotate([0, 0, angle])
+                    translate([35 / 2, 0, 5])
+                        cylinder(d = 3.8, h = 20, center = true);
+            }
+        }
 }
 
 // Driving azimuth gear.
@@ -128,7 +138,7 @@ module Altitude_Gear_Support() {
             // Hole for radial bearing.
             translate([-36, 0, ALTITUDE_GEAR_AXLE_HEIGHT]) {
                 rotate([0, 90]) {
-                        cylinder(d = 29, h = 80);
+                        cylinder(d = RADIAL_BEARINGS_DIAMETER, h = 80);
                 }
             }
         }
@@ -139,7 +149,7 @@ module Main_Altitude_Gear_Assembly() {
     altitude_gear_outer_radius = outer_radius(mm_per_tooth = ALTITUDE_GEARS_MM_PER_TOOTH, number_of_teeth = MAIN_ALTITUDE_GEAR_TEETH, clearance = 0.0);
 
     color([1, 1, 0]) {
-        translate([-ALTITUDE_GEARS_THICKNESS/2, 0, ALTITUDE_GEAR_AXLE_HEIGHT]) {
+        translate([-ALTITUDE_GEARS_THICKNESS/2 - 2.25, 0, ALTITUDE_GEAR_AXLE_HEIGHT]) {
             // Make the main altitude gear with a hole cut out of the top for the PVC pipe and holes for nuts and bolts.
             difference() {
                 // Gear body.
@@ -147,14 +157,31 @@ module Main_Altitude_Gear_Assembly() {
                     gear(thickness = ALTITUDE_GEARS_THICKNESS, number_of_teeth = MAIN_ALTITUDE_GEAR_TEETH, mm_per_tooth = ALTITUDE_GEARS_MM_PER_TOOTH, hole_diameter = AXLES_DIAMETER);
                 }
                 // Hole for the PVC pipe.
-                translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 40])
+                translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 45])
                     cylinder(d = 35, h = 50);
-                // Holes for nuts and bolts to hold the gear together.
+                // Holes for nuts and bolts to hold the gear together, plus triangular holes to make the gear use less plastic.
                 for (angle = [90:360 / 6:360 + 90]) {
-                    rotate([angle, 0, 0])
+                    rotate([angle, 0, 0]) {
                         translate([ALTITUDE_GEARS_THICKNESS/2, 0, 70])
                             Hole_For_M3_Nut_And_Bolt();
+                        translate([5, 0, 50])
+                            rotate([0, 90, 0])
+                                triangle(60, 30, 20, center = true);
+                    }
                 }
+            }
+            // Add cone-shaped pieces to keep the gear on the axle.
+            difference() {
+                union() {
+                    translate([-25.2, 0])
+                        rotate([0, 90])
+                            cylinder(h = 25.2, d1 = 16.2, d2 = 35);
+                    translate([10, 0])
+                        rotate([0, 90])
+                            cylinder(h = 29.7, d1 = 35, d2 = 16.2);
+                }
+                rotate([0, 90])
+                    cylinder(h = 100, d = AXLES_DIAMETER, center = true);
             }
             // Add a collar to go around the PVC pipe, plus a half-sphere underneath it to brace it against the gear.
             translate([ALTITUDE_GEARS_THICKNESS/2, 0, altitude_gear_outer_radius - 45]) {
@@ -180,7 +207,7 @@ module Main_Altitude_Gear_Assembly() {
 // Driving altitude gear.
 module Driving_Altitude_Gear() {
     color([0, 1, 0])
-        translate([-ALTITUDE_GEARS_THICKNESS/2, 0])
+        translate([-ALTITUDE_GEARS_THICKNESS/2 - 2.25, 0])
             rotate([0, 90, 0])
                     rotate([0, 0, DRIVING_ALTITUDE_GEAR_ANGLE]) {
                         difference() {
@@ -227,17 +254,17 @@ module Main_Azimuth_Gear_Assembly() {
 
 pitch_radius_main_azimuth_gear = pitch_radius(mm_per_tooth = AZIMUTH_GEARS_MM_PER_TOOTH, number_of_teeth = MAIN_AZIMUTH_GEAR_TEETH);
 pitch_radius_driving_azimuth_gear = pitch_radius(mm_per_tooth = AZIMUTH_GEARS_MM_PER_TOOTH, number_of_teeth = DRIVING_AZIMUTH_GEAR_TEETH);
-driving_gear_offset = pitch_radius_main_azimuth_gear + pitch_radius_driving_azimuth_gear + 1;
+azimuth_driving_gear_offset = pitch_radius_main_azimuth_gear + pitch_radius_driving_azimuth_gear + 1;
 
 // Driving azimuth gear.
 module Driving_Azimuth_Gear_Assembly() {
-    translate([driving_gear_offset, 0])
+    translate([azimuth_driving_gear_offset, 0])
         Driving_Azimuth_Gear();
 }
 
 // Driving azimuth motor.
 module Driving_Azimuth_Motor_Assembly() {
-    translate([driving_gear_offset, 0, -21]) {
+    translate([azimuth_driving_gear_offset, 0, -21]) {
         rotate([180]) {
             DC_Motor();
             translate([0, 0, -21])
@@ -269,18 +296,50 @@ module Driving_Altitude_Gear_Assembly() {
         Driving_Altitude_Gear();
 }
 
+// Conical spacer that goes between the main azimuth gear and its bearing to keep the main azimuth gear at the right height.
+/*
+module Main_Azimuth_Gear_Spacer_Assembly() {
+    spacer_height = 17.5;
+    translate([0, 0, -spacer_height])
+        difference() {
+            cylinder(d1 = 16.2, d2 = 35, h = spacer_height);
+            cylinder(d = AXLES_DIAMETER, h = 70, center = true);
+        }
+}
+*/
+
 // Baseplate.
 module Baseplate_Assembly() {
+    echo(str("azimuth_driving_gear_offset = ", azimuth_driving_gear_offset, " mm"));
     difference() {
         translate([0, 0, -21])
-            cube([300, 300, 0.5], true);
-        translate([driving_gear_offset, 0, -22]) {
+            cube([279.4, 279.4, 6.68], true);
+        translate([azimuth_driving_gear_offset, 0, -22]) {
             rotate([180]) {
                 DC_Motor_Mounting_Screw_Holes();
             }
         }
         translate([0, 0, -25])
-            cylinder(d = AXLES_DIAMETER, h = 10);
+            cylinder(d = RADIAL_BEARINGS_DIAMETER, h = 10);
+    }
+}
+
+// Slip ring.
+module Slip_Ring() {
+    // SNM022A-12 Slip Ring from SenRing.
+    translate([0, 0, -9]) {
+        cylinder(d = 22, h = 26);
+        translate([0, 0, 26])
+            cylinder(d = 7.8, h = 9);
+        difference() {
+            translate([0, 0, 18.6])
+                cylinder(d = 44.5, h = 2.4);
+            for (angle = [0 : 360 / 3 : 360]) {
+                rotate([0, 0, angle])
+                    translate([35 / 2, 0, 15])
+                        cylinder(d = 5.2, h = 10);
+            }
+        }
     }
 }
 
@@ -289,7 +348,7 @@ module Altitude_Gear_Assembly_Printable_Piece_1() {
     difference() {
         translate([0, 0, -ALTITUDE_GEAR_AXLE_HEIGHT])
             Main_Altitude_Gear_Assembly();
-        translate([25, 0])
+        translate([50 / 2 - 2.25, 0])
             cube([50, 250, 300], center = true);
     }
 }
@@ -298,12 +357,13 @@ module Altitude_Gear_Assembly_Printable_Piece_2() {
     difference() {
         translate([0, 0, -ALTITUDE_GEAR_AXLE_HEIGHT])
             Main_Altitude_Gear_Assembly();
-        translate([-25, 0])
+        translate([-50 / 2 - 2.25, 0])
             cube([50, 250, 300], center = true);
     }
 }
 
 Main_Azimuth_Gear_Assembly();
+/*
 Driving_Azimuth_Gear_Assembly();
 Driving_Azimuth_Motor_Assembly();
 
@@ -311,7 +371,10 @@ Main_Altitude_Gear_Assembly();
 Driving_Altitude_Motor_Assembly();
 Driving_Altitude_Gear_Assembly();
 
+Baseplate_Assembly();
+
+Slip_Ring();
+*/
+
 //Altitude_Gear_Assembly_Printable_Piece_1();
 //Altitude_Gear_Assembly_Printable_Piece_2();
-
-Baseplate_Assembly();
