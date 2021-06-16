@@ -51,6 +51,8 @@ fn main() {
     let target_azimuth = Arc::new(AtomicI16::new(0));
 
     let finish_ref = Arc::clone(&finish);
+    let target_altitude_ref2 = Arc::clone(&target_altitude);
+    let target_azimuth_ref2 = Arc::clone(&target_azimuth);
     ctrlc::set_handler(move || {
         println!("\rControl-C pressed! Stopping motors and exiting.");
         finish_ref.store(true, Ordering::Relaxed);
@@ -96,7 +98,9 @@ fn main() {
         std::process::exit(0);
     });
 
-    let tle: Tle = Tle::from_file("SAUDISAT 1C (SO-50)", "so-50.tle").unwrap();
+    let tle: Tle = Tle::from_file("SAUDISAT 1C (SO-50)", "amateur.tle").unwrap();
+    //let tle: Tle = Tle::from_file("ISS (ZARYA)", "iss.tle").unwrap();
+    //let tle: Tle = Tle::from_file("NUSAT-1 (FRESCO)", "amateur.tle").unwrap();
     let location: Location = Location { lat_deg: 37.649250, lon_deg: -121.875070, alt_m: 105.0 };
     let mut predict: Predict = Predict::new(&tle, &location);
 
