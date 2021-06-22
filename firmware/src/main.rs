@@ -47,15 +47,23 @@ fn main() {
     thunderborg.set_motor_2(0.0);
    
     let finish = Arc::new(AtomicBool::new(false));
+    let go_home = Arc::new(AtomicBool::new(false));
     let target_altitude = Arc::new(AtomicI16::new(90));
     let target_azimuth = Arc::new(AtomicI16::new(0));
 
     let finish_ref = Arc::clone(&finish);
-    let target_altitude_ref2 = Arc::clone(&target_altitude);
-    let target_azimuth_ref2 = Arc::clone(&target_azimuth);
+    let go_home_ref = Arc::clone(&go_home);
+    let mut control_c_presses: u8 = 0;
     ctrlc::set_handler(move || {
-        println!("\rControl-C pressed! Stopping motors and exiting.");
-        finish_ref.store(true, Ordering::Relaxed);
+        control_c_presses += 1;
+        if control_c_presses == 1 {
+            println!("\rControl-C pressed once, returning to home position. Press again for emergency stop.");
+	    go_home_ref.store(true, Ordering::Relaxed);
+        }
+	else {
+            println!("\rControl-C pressed twice! Stopping motors and exiting.");
+            finish_ref.store(true, Ordering::Relaxed);
+	}
     }).expect("Failed to set Control-C handler!");
 
     let gpio = Arc::new(Gpio::new().unwrap());
@@ -98,8 +106,8 @@ fn main() {
         std::process::exit(0);
     });
 
-    let tle: Tle = Tle::from_file("SAUDISAT 1C (SO-50)", "amateur.tle").unwrap();
-    //let tle: Tle = Tle::from_file("ISS (ZARYA)", "iss.tle").unwrap();
+    //let tle: Tle = Tle::from_file("JUGNU", "jugnu.tle").unwrap();
+    let tle: Tle = Tle::from_file("ISS (ZARYA)", "iss.tle").unwrap();
     //let tle: Tle = Tle::from_file("NUSAT-1 (FRESCO)", "amateur.tle").unwrap();
     let location: Location = Location { lat_deg: 37.649250, lon_deg: -121.875070, alt_m: 105.0 };
     let mut predict: Predict = Predict::new(&tle, &location);
@@ -108,19 +116,26 @@ fn main() {
     //println!("{:#?}", predict);
 
     loop {
-        /*
+	/*
         println!("Target altitude?");
         let target_altitude_input: i16 = read!();
         target_altitude.store(target_altitude_input, Ordering::Relaxed);
         println!("Target azimuth?");
         let target_azimuth_input: i16 = read!();
         target_azimuth.store(target_azimuth_input, Ordering::Relaxed);
-        */
-        predict.update(None);
-        println!("Altitude: {}", predict.sat.el_deg);
-        println!("Azimuth: {}", predict.sat.az_deg);
-        target_altitude.store(predict.sat.el_deg as i16, Ordering::Relaxed);
-        target_azimuth.store(predict.sat.az_deg as i16, Ordering::Relaxed);
+	*/
+
+        if go_home.load(Ordering::Relaxed) {
+            target_altitude.store(90, Ordering::Relaxed);
+	    target_azimuth.store(0, Ordering::Relaxed);
+        }
+        else {
+            predict.update(None);
+            println!("Altitude: {}", predict.sat.el_deg);
+            println!("Azimuth: {}", predict.sat.az_deg);
+            target_altitude.store(predict.sat.el_deg as i16, Ordering::Relaxed);
+            target_azimuth.store(predict.sat.az_deg as i16, Ordering::Relaxed);
+        }
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
 }
