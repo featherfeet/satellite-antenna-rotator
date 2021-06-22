@@ -40,7 +40,7 @@ fn azimuth_angle_to_driving_revs(azimuth_angle: f64) -> f64 {
 fn main() {
     println!("Running on a {}.", DeviceInfo::new().unwrap().model());
 
-    let mut thunderborg = Thunderborg::new(0x15);
+    let mut thunderborg = Thunderborg::new(0x19);
     thunderborg.set_led_show_battery(false);
     thunderborg.set_led_1(0.0, 0.0, 0.0);
     thunderborg.set_motor_1(0.0);
@@ -58,12 +58,12 @@ fn main() {
         control_c_presses += 1;
         if control_c_presses == 1 {
             println!("\rControl-C pressed once, returning to home position. Press again for emergency stop.");
-	    go_home_ref.store(true, Ordering::Relaxed);
+	        go_home_ref.store(true, Ordering::Relaxed);
         }
-	else {
+        else {
             println!("\rControl-C pressed twice! Stopping motors and exiting.");
             finish_ref.store(true, Ordering::Relaxed);
-	}
+        }
     }).expect("Failed to set Control-C handler!");
 
     let gpio = Arc::new(Gpio::new().unwrap());
@@ -108,8 +108,11 @@ fn main() {
 
     //let tle: Tle = Tle::from_file("JUGNU", "jugnu.tle").unwrap();
     let tle: Tle = Tle::from_file("ISS (ZARYA)", "iss.tle").unwrap();
-    //let tle: Tle = Tle::from_file("NUSAT-1 (FRESCO)", "amateur.tle").unwrap();
-    let location: Location = Location { lat_deg: 37.649250, lon_deg: -121.875070, alt_m: 105.0 };
+    //let tle: Tle = Tle::from_file("LUSAT (LO-19)", "amateur.tle").unwrap();
+    // HOME:
+    //let location: Location = Location { lat_deg: 37.649250, lon_deg: -121.875070, alt_m: 105.0 };
+    // HILL:
+    let location: Location = Location { lat_deg: 37.650444, lon_deg: -121.866836, alt_m: 171.0 };
     let mut predict: Predict = Predict::new(&tle, &location);
 
     //predict.update(None);
@@ -133,6 +136,9 @@ fn main() {
             predict.update(None);
             println!("Altitude: {}", predict.sat.el_deg);
             println!("Azimuth: {}", predict.sat.az_deg);
+            println!("Range rate: {} km/s", predict.sat.range_rate_km_sec);
+            let frequency_shifted: f64 = (145.800 * 1.0e6) + ((predict.sat.range_rate_km_sec * 1000.0) / 2.998e8) * (145.800 * 1.0e6);
+            println!("Doppler-shifted frequency: {} MHz", frequency_shifted / 1.0e6);
             target_altitude.store(predict.sat.el_deg as i16, Ordering::Relaxed);
             target_azimuth.store(predict.sat.az_deg as i16, Ordering::Relaxed);
         }
