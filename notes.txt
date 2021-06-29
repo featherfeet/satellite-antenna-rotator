@@ -1,0 +1,7 @@
+Powering the Raspberry Pi 4 via DC/DC converter from a car battery. Current measured by a multimeter in current mode in the 10 A range, placed in series with the return path of current from the DC/DC converter to the car battery.
+
+0.4 A while running `htop` and `stress --cpu 8 --io 4 --vm 2 --vm-bytes 128M` over SSH
+0.243 A while running just `htop` over SSH
+0.166 A with Pi shut down
+
+Battery voltage (unloaded): 13.17 V
