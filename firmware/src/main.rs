@@ -1,6 +1,7 @@
 mod thunderborg;
 mod encoder;
 mod pid;
+mod motors;
 
 extern crate gpredict;
 
@@ -9,9 +10,9 @@ extern crate text_io;
 
 use rppal::system::DeviceInfo;
 use rppal::gpio::Gpio;
-use thunderborg::Thunderborg;
 use encoder::Encoder;
 use pid::Pid;
+use motors::Motors;
 use std::sync::Arc;
 use std::sync::atomic::{ AtomicBool, AtomicI16, Ordering };
 use std::thread;
@@ -39,17 +40,16 @@ fn azimuth_angle_to_driving_revs(azimuth_angle: f64) -> f64 {
 
 fn main() {
     println!("Running on a {}.", DeviceInfo::new().unwrap().model());
-
-    let mut thunderborg = Thunderborg::new(0x19);
-    thunderborg.set_led_show_battery(false);
-    thunderborg.set_led_1(0.0, 0.0, 0.0);
-    thunderborg.set_motor_1(0.0);
-    thunderborg.set_motor_2(0.0);
    
     let finish = Arc::new(AtomicBool::new(false));
     let go_home = Arc::new(AtomicBool::new(false));
     let target_altitude = Arc::new(AtomicI16::new(90));
     let target_azimuth = Arc::new(AtomicI16::new(0));
+
+    let gpio = Arc::new(Gpio::new().unwrap());
+
+    let mut motors = Motors::new(Arc::clone(&gpio), 4, 17, 18, 23);
+    motors.set_target_speed_2(0.5);
 
     let finish_ref = Arc::clone(&finish);
     let go_home_ref = Arc::clone(&go_home);
@@ -66,8 +66,12 @@ fn main() {
         }
     }).expect("Failed to set Control-C handler!");
 
-    let gpio = Arc::new(Gpio::new().unwrap());
+    while !finish.load(Ordering::Relaxed) {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    motors.finish();
 
+    /*
     let gpio_ref = Arc::clone(&gpio);
     let target_altitude_ref = Arc::clone(&target_altitude);
     let target_azimuth_ref = Arc::clone(&target_azimuth);
@@ -144,4 +148,5 @@ fn main() {
         }
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
+    */
 }

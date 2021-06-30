@@ -10,6 +10,7 @@ edition = "2018"
 rppal = "0.12.0"
 ctrlc = "3.1.7"
 text_io = "0.1.8"
+atomicfloat = "0.1.0"
 
 [dependencies.gpredict]
 git = "https://github.com/connerebbinghaus/rust-gpredict.git"
