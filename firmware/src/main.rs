@@ -71,17 +71,18 @@ fn main() {
     thread::spawn(move || {
         //*(altitude_encoder.steps.lock().unwrap()) = (altitude_angle_to_driving_revs(90.0) * ALTITUDE_ENCODER_STEPS_PER_REVOLUTION) as i64;
 
-        let mut azimuth_pid = Pid::new(-2.0, -0.005, -20.0, -1.0, 1.0);
-        let mut altitude_pid = Pid::new(-2.0, -0.005, -20.0, -1.0, 1.0);
-        //azimuth_pid.set_logfile("azimuth_encoder.csv");
-        //altitude_pid.set_logfile("altitude_encoder.csv");
+        //let mut azimuth_pid = Pid::new(-2.0, -0.005, -20.0, -1.0, 1.0);
+        //let mut altitude_pid = Pid::new(-2.0, -0.005, -20.0, -1.0, 1.0);
+        let mut azimuth_pid = Pid::new(2.0, 0.005, 20.0, -1.0, 1.0);
+        let mut altitude_pid = Pid::new(2.0, 0.005, 20.0, -1.0, 1.0);
+        azimuth_pid.set_logfile("azimuth_encoder.csv");
+        altitude_pid.set_logfile("altitude_encoder.csv");
 
         while !finish.load(Ordering::Relaxed) {
             let altitude_revs: f64 = motors.get_revs_1();
             let azimuth_revs: f64 = motors.get_revs_2();
 
             let target_revs_driving_altitude = altitude_angle_to_driving_revs(target_altitude_ref.load(Ordering::Relaxed) as f64);
-            println!("target_revs_driving_altitude: {}", target_revs_driving_altitude);
             let altitude_motor_target_speed: f64 = altitude_pid.compute(altitude_revs, target_revs_driving_altitude);
 
             let target_revs_driving_azimuth = azimuth_angle_to_driving_revs(target_azimuth_ref.load(Ordering::Relaxed) as f64);
