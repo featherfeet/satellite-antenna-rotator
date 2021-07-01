@@ -42,7 +42,7 @@ impl Pid {
 
         match self.logfile {
             Some(ref mut logfile) => {
-                writeln!(logfile, "{},{},{},{},{},{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(), error, self.p * error, self.i_accumulator, self.d * (error - self.previous_error), output).unwrap();
+                writeln!(logfile, "{},{},{},{},{},{},{},{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis(), error, self.p * error, self.i_accumulator, self.d * (error - self.previous_error), output, value, target_value).unwrap();
             }
             _ => {}
         }
@@ -55,7 +55,7 @@ impl Pid {
     pub fn set_logfile(&mut self, logfile_name: &str) {
         let logfile_path = Path::new(logfile_name);
         let mut file = File::create(&logfile_path).unwrap();
-        writeln!(file, "Time,Error,P,I-Accumulator,D,Output").unwrap();
+        writeln!(file, "Time,Error,P,I-Accumulator,D,Output,Input,Target").unwrap();
         self.logfile = Some(file);
     }
     
