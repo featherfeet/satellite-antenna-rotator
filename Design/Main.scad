@@ -2,6 +2,8 @@
 
 $fn = 200;
 
+INCH = 25.4;
+
 // Diameter of the metal axles used for the main altitude and azimuth gears.
 AXLES_DIAMETER = 10.5; // mm
 
@@ -41,6 +43,10 @@ DRIVING_ALTITUDE_GEAR_TEETH = 7; // teeth
 // Height (measured from the bottom face of the azimuth gear) to the axle of the altitude gear.
 ALTITUDE_GEAR_AXLE_HEIGHT = 100 + 15 + 50 + 20;
 
+SLIP_RING_LOWER_PART_DIAMETER = 22;
+
+LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE = 141.61;
+
 use <pd-gears.scad>
 use <DC Motor.scad>
 use <triangles.scad>
@@ -77,15 +83,9 @@ module Hole_For_M3_Nut_And_Bolt() {
 
 // Main azimuth gear.
 module Main_Azimuth_Gear() {
-    color([0.67, 0.84, 0.9])
-        difference() {
-            gear(thickness = AZIMUTH_GEARS_THICKNESS, number_of_teeth = MAIN_AZIMUTH_GEAR_TEETH, mm_per_tooth = AZIMUTH_GEARS_MM_PER_TOOTH, hole_diameter = 25);
-            for (angle = [0 : 360 / 3 : 360]) {
-                rotate([0, 0, angle])
-                    translate([35 / 2, 0, 5])
-                        cylinder(d = 3.8, h = 20, center = true);
-            }
-        }
+    color([0.67, 0.84, 0.9]) {
+        gear(thickness = AZIMUTH_GEARS_THICKNESS, number_of_teeth = MAIN_AZIMUTH_GEAR_TEETH, mm_per_tooth = AZIMUTH_GEARS_MM_PER_TOOTH, hole_diameter = 25);
+    }
 }
 
 // Driving azimuth gear.
@@ -312,23 +312,81 @@ module Main_Azimuth_Gear_Spacer_Assembly() {
 module Baseplate_Assembly() {
     echo(str("azimuth_driving_gear_offset = ", azimuth_driving_gear_offset, " mm"));
     difference() {
-        translate([0, 0, -21])
-            cube([279.4, 279.4, 6.68], true);
-        translate([azimuth_driving_gear_offset, 0, -22]) {
-            rotate([180]) {
-                DC_Motor_Mounting_Screw_Holes();
+        // Main piece of 1/8" plywood.
+        square([10.5 * INCH, 10.5 * INCH], true);
+        // Mounting holes for azimuth motor.
+        rotate([0, 0, -45]) {
+            translate([azimuth_driving_gear_offset, 0]) {
+                rotate([180]) {
+                    DC_Motor_Mounting_Screw_Holes_2D();
+                }
             }
         }
-        translate([0, 0, -25])
-            cylinder(d = RADIAL_BEARINGS_DIAMETER, h = 10);
+        // Hole for slip ring.
+        circle(d = SLIP_RING_LOWER_PART_DIAMETER + 1);
+        // Screw holes for mounting slip ring.
+        for (angle = [0 : 360 / 3 : 360]) {
+            rotate([0, 0, angle])
+                translate([35 / 2, 0])
+                    circle(d = 3.8);
+        }
+        // Screw holes for lazy susan bearing.
+        rotate([0, 0, 45]) {
+            translate([-LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2, LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2]) {
+                circle(d = 5);
+            }
+            translate([LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2, LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2]) {
+                circle(d = 5);
+            }
+            translate([-LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2, -LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2]) {
+                circle(d = 5);
+            }
+            translate([LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2, -LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2]) {
+                circle(d = 5);
+            }
+        }
+    }
+}
+
+module Baseplate_Engraving() {
+    rotate([0, 0, 45]) {
+        difference() {
+            // Lazy susan bearing outline.
+            difference() {
+                square([152.36, 152.36], true);
+                square([152.36 - 20, 152.36 - 20], true);
+            }
+            // Screw holes for lazy susan bearing.
+            translate([-LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2, LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2]) {
+                circle(d = 7);
+            }
+            translate([LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2, LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2]) {
+                circle(d = 7);
+            }
+            translate([-LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2, -LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2]) {
+                circle(d = 7);
+            }
+            translate([LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2, -LAZY_SUSAN_BEARING_MOUNTING_HOLES_DISTANCE / 2]) {
+                circle(d = 7);
+            }
+        }
+    }
+    translate([-120, -90]) {
+        text("KM6WOX");
+    }
+    translate([-120, -105]) {
+        text("Oliver Trevor");
+    }
+    translate([-120, -120]) {
+        text("olt@mit.edu");
     }
 }
 
 // Slip ring.
 module Slip_Ring() {
     // SNM022A-12 Slip Ring from SenRing.
-    translate([0, 0, -9]) {
-        cylinder(d = 22, h = 26);
+    translate([0, 0, -35]) {
+        cylinder(d = SLIP_RING_LOWER_PART_DIAMETER, h = 26);
         translate([0, 0, 26])
             cylinder(d = 7.8, h = 9);
         difference() {
@@ -363,18 +421,31 @@ module Altitude_Gear_Assembly_Printable_Piece_2() {
 }
 
 Main_Azimuth_Gear_Assembly();
-/*
-Driving_Azimuth_Gear_Assembly();
-Driving_Azimuth_Motor_Assembly();
+
+rotate([0, 0, -45]) {
+    Driving_Azimuth_Gear_Assembly();
+    Driving_Azimuth_Motor_Assembly();
+}
 
 Main_Altitude_Gear_Assembly();
 Driving_Altitude_Motor_Assembly();
 Driving_Altitude_Gear_Assembly();
 
-Baseplate_Assembly();
+translate([0, 0, -21]) {
+    difference() {
+        linear_extrude(height = (1 / 8) * INCH) {
+            Baseplate_Assembly();
+        }
+        translate([0, 0, (1 / 16) * INCH + 0.02]) {
+            linear_extrude(height = (1 / 16) * INCH) {
+                Baseplate_Engraving();
+            }
+        }
+    }
+}
 
 Slip_Ring();
-*/
+//Baseplate_Assembly();
 
 //Altitude_Gear_Assembly_Printable_Piece_1();
 //Altitude_Gear_Assembly_Printable_Piece_2();

@@ -64,4 +64,16 @@ module DC_Motor_Mounting_Screw_Holes() {
     }
 }
 
+module DC_Motor_Mounting_Screw_Holes_2D() {
+    translate([8.5, 0, -20]) {
+        circle(d = MOUNTING_SCREW_SIZE + 0.25);
+    }
+    translate([-8.5, 0, -20]) {
+        circle(d = MOUNTING_SCREW_SIZE + 0.25);
+    }
+    translate([0, 0, -20]) {
+        circle(d = MOTOR_FLANGE_DIAMETER + 0.25);
+    }
+}
+
 //DC_Motor();
